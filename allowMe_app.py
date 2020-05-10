@@ -5,6 +5,7 @@ from flask import Flask, render_template
 from flask import request
 from flask import jsonify
 
+import subprocess
 import boto3
 import sys
 
@@ -30,8 +31,7 @@ class SignupForm(FlaskForm):
 class MyForm(FlaskForm):
     name = StringField('name', validators=[DataRequired()])
     password = PasswordField('passwd', [validators.DataRequired(),validators.Length(min=8)])
-
-
+    
 
 @app.route('/allowmeplease', methods=('GET', 'POST'))
 def submit():
@@ -47,21 +47,25 @@ def get_my_ip():
     name = request.form['name']
     ip_allow = str(request.remote_addr) + '/32'
     if passwd == 'XhiCo3vIC5dsxxYdHy9x':
-        try:
-            retorno = ec2.authorize_security_group_ingress(
-                GroupId=security_group_id,
-                IpPermissions=[
-                    {'IpProtocol': '-1',
-                     'IpRanges': [
-                        {'CidrIp': ip_allow,
-                         'Description': 'Allowed by web - ' + str(name)
-                        }]
-                    }
-                ])
-            print(retorno)
-            return jsonify({ 'Sucesso, liberado': {'ip': ip_allow} }), 200
-        except Exception as err: 
-            return jsonify({'Erro': str(err)}), 200
+        if iptables_only:
+            print("allowing only local server iptables")
+            subprocess.call(f"/sbin/iptables -I INPUT -s {ip_allow} -m comment --comment "Liberado pelo allowme" -j ACCEPT", shell=True)
+        else:
+            try:
+                retorno = ec2.authorize_security_group_ingress(
+                    GroupId=security_group_id,
+                    IpPermissions=[
+                        {'IpProtocol': '-1',
+                         'IpRanges': [
+                            {'CidrIp': ip_allow,
+                             'Description': 'Allowed by web - ' + str(name)
+                            }]
+                        }
+                    ])
+                print(retorno)
+                return jsonify({ 'Sucesso, liberado': {'ip': ip_allow} }), 200
+            except Exception as err: 
+                return jsonify({'Erro': str(err)}), 200
     else:
         return jsonify({'access': 'denied'}), 200
 
