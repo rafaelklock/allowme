@@ -49,7 +49,7 @@ def get_my_ip():
     if passwd == 'XhiCo3vIC5dsxxYdHy9x':
         if iptables_only:
             print("allowing only local server iptables")
-            subprocess.call(f"/sbin/iptables -I INPUT -s {ip_allow} -m comment --comment "Liberado pelo allowme" -j ACCEPT", shell=True)
+            subprocess.call("/sbin/iptables -I INPUT -s " + ip_allow + " -m comment --comment allowme -j ACCEPT", shell=True)
         else:
             try:
                 retorno = ec2.authorize_security_group_ingress(
