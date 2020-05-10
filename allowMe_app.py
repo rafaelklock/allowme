@@ -23,6 +23,9 @@ app.config['RECAPTCHA_PRIVATE_KEY']='6LeA1-kUAAAAAC_LIqK1gsWpDUgMTnvIhYFucGcu'
 app.config['RECAPTCHA_OPTIONS'] = {'theme':'white'}
 
 
+iptables_only = 'yes'
+
+
 class SignupForm(FlaskForm):
     username = TextField('Username')
     recaptcha = RecaptchaField()
@@ -47,9 +50,10 @@ def get_my_ip():
     name = request.form['name']
     ip_allow = str(request.remote_addr) + '/32'
     if passwd == 'XhiCo3vIC5dsxxYdHy9x':
-        if iptables_only:
-            print("allowing only local server iptables")
-            subprocess.call("/sbin/iptables -I INPUT -s " + ip_allow + " -m comment --comment allowme -j ACCEPT", shell=True)
+        if iptables_only == 'yes':
+            subprocess.call("/sbin/iptables -I INPUT -s " + ip_allow + " -m comment --comment AllowMe -j ACCEPT", shell=True)
+            print("ok!")
+            return jsonify({ 'Sucesso, liberado': {'ip': ip_allow} }), 200
         else:
             try:
                 retorno = ec2.authorize_security_group_ingress(
